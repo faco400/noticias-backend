@@ -1,3 +1,4 @@
+import { inMemoryCache } from '../cache/inMemoryCache';
 import { NoticiasRepository } from '../repositories/noticias.repository';
 
 interface CreateNoticiaDTO {
@@ -31,8 +32,20 @@ export class NoticiasService {
     });
   }
 
-  async findAll(params: FindAllParams) {
-    return this.noticiasRepository.findAll(params);
+  async findAll({ page = 1, limit = 10, search }: FindAllParams) {
+    const cacheKey = `noticias:page=${page}&limit=${limit}&search=${search ?? ''}`;
+
+    const cached = inMemoryCache.get(cacheKey);
+    if (cached) {
+      console.log('[CACHE] HIT:', cacheKey);
+      return cached;
+    }
+
+    const result = await this.noticiasRepository.findAll({ page, limit, search });
+
+    inMemoryCache.set(cacheKey, result);
+
+    return result;
   }
 
   async update(id: number, data: CreateNoticiaDTO) {
