@@ -1,4 +1,5 @@
 import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
 
 interface CreateNoticiaDTO {
   titulo: string;
@@ -21,14 +22,24 @@ export class NoticiasRepository {
   async findAll({ page = 1, limit = 10, search }: FindAllParams) {
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            { titulo: { contains: search, mode: 'insensitive' } },
-            { descricao: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+    const where: Prisma.NoticiaWhereInput | undefined = search
+  ? {
+      OR: [
+        {
+          titulo: {
+            contains: search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          descricao: {
+            contains: search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+      ],
+    }
+  : undefined;
 
     const [items, total] = await Promise.all([
       prisma.noticia.findMany({
